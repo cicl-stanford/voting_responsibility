@@ -1,0 +1,27 @@
+{
+        "stim":[
+        {"ID":20,"names":["Austin","Wilson","Dean"],"party":[1,1,1],"vote":[1,1,1],"support":"Republican","rule":2,"outcome":"passed","focus":[1,0,0]},
+{"ID":24,"names":["Darrel","David","Frank"],"party":[1,0,0],"vote":[1,0,0],"support":"Democratic","rule":3,"outcome":"not passed","focus":[0,1,0]},
+{"ID":26,"names":["Jonathan","Gilbert","Leonel"],"party":[1,1,0],"vote":[1,0,0],"support":"Republican","rule":3,"outcome":"not passed","focus":[0,1,1]},
+{"ID":33,"names":["Emerson","Colin","Ian","Linwood","Salvatore"],"party":[0,0,0,0,0],"vote":[1,1,0,0,0],"support":"Democratic","rule":1,"outcome":"passed","focus":[1,0,0,0,0]},
+{"ID":42,"names":["Felix","Dalton","Timothy","Tony","Glenn"],"party":[1,1,0,0,0],"vote":[1,0,1,0,0],"support":"Democratic","rule":1,"outcome":"passed","focus":[1,0,1,0,0]},
+{"ID":91,"names":["Benjamin","Marcel","Leon","Desmond","Buford"],"party":[1,0,0,0,0],"vote":[1,0,0,0,0],"support":"Republican","rule":3,"outcome":"not passed","focus":[0,1,0,0,0]},
+{"ID":93,"names":["Brett","Erwin","Roger","Willis","Pete"],"party":[1,0,0,0,0],"vote":[1,1,0,0,0],"support":"Republican","rule":3,"outcome":"not passed","focus":[0,0,1,0,0]},
+{"ID":104,"names":["Royce","Sean","Shaun","Louis","Jan"],"party":[1,1,1,0,0],"vote":[1,1,0,1,0],"support":"Democratic","rule":3,"outcome":"passed","focus":[1,0,0,1,0]},
+{"ID":110,"names":["Rocco","Hugh","Kyle","Brent","Stewart"],"party":[1,1,1,1,0],"vote":[1,1,1,0,1],"support":"Republican","rule":3,"outcome":"passed","focus":[1,0,0,0,1]},
+{"ID":114,"names":["Russell","Cary","Byron","Moses","Todd"],"party":[1,1,1,1,1],"vote":[1,1,1,1,1],"support":"Republican","rule":3,"outcome":"passed","focus":[1,0,0,0,0]},
+{"ID":123,"names":["Charley","Franklin","Damian","Vernon","Brad"],"party":[1,1,0,0,0],"vote":[0,0,0,0,0],"support":"Democratic","rule":4,"outcome":"not passed","focus":[1,0,1,0,0]},
+{"ID":132,"names":["Randall","Alvaro","Agustin","Leroy","Ray"],"party":[1,1,1,0,0],"vote":[1,1,0,1,0],"support":"Democratic","rule":4,"outcome":"not passed","focus":[0,0,1,0,1]},
+{"ID":137,"names":["Christian","Hector","Kendall","Arnold","Sterling"],"party":[1,1,1,1,0],"vote":[1,1,1,1,0],"support":"Democratic","rule":4,"outcome":"passed","focus":[1,0,0,0,0]},
+{"ID":147,"names":["Terrence","Landon","Donny","Gerardo","Jeremiah"],"party":[1,0,0,0,0],"vote":[1,0,0,0,0],"support":"Democratic","rule":5,"outcome":"not passed","focus":[0,1,0,0,0]},
+{"ID":149,"names":["Marvin","Truman","Noah","Anthony","Gabriel"],"party":[1,0,0,0,0],"vote":[1,1,0,0,0],"support":"Republican","rule":5,"outcome":"not passed","focus":[0,0,1,0,0]},
+{"ID":160,"names":["Adan","Bradley","Dwight","Tommy","Wilfredo"],"party":[1,1,1,0,0],"vote":[1,1,0,1,0],"support":"Democratic","rule":5,"outcome":"not passed","focus":[0,0,1,0,1]},
+{"ID":164,"names":["Irvin","Scotty","Lawrence","Dick","Pat"],"party":[1,1,1,1,0],"vote":[1,1,1,0,0],"support":"Democratic","rule":5,"outcome":"not passed","focus":[0,0,0,1,1]}
+    ],
+    "prompt": "Below you can see information about the particular policy on the left and which of the politicians voted for the policy on the right. Remember that each politician knows <b>a)</b> how many people are in the committee, <b>b)</b> how many votes are required for the policy to be passed, <b>c)</b> what the different politicians' party affiliations are, and <b>d)</b> whether the policy is supported by the Democratic or Republican party.",
+    "text": "Please use the sliders below to indicate to what extent the different politicians are responsible for the outcome of the vote.",
+    "questions":[
+        {"q": "To what extent is <b>{{voter1}}</b> responsible that the policy was <b>{{outcome}}</b>?", "l": ["not at all", "", "very much"]},
+        {"q": "To what extent is <b>{{voter2}}</b> responsible that the policy was <b>{{outcome}}</b>?", "l": ["not at all", "", "very much"]}
+    ]
+}
