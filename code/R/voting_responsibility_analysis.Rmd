@@ -6,6 +6,7 @@ output:
   bookdown::html_document2:
     toc: true
     toc_depth: 4
+    toc_float: true
     theme: cosmo
     highlight: tango
 ---
@@ -29,8 +30,7 @@ library("janitor")   # for cleaning variable names
 library("DT")        # nice html tables
 library("Hmisc")     # smean function for bootstrapped confidence intervals
 library("broom")     # tidy regression results
-library("lme4")      # mixed effects models 
-library("brms")      # Bayesian regression models
+library("brms")      # Bayesian mixed effects models
 library("tidybayes") # for tidying up results from brms
 library("xtable")    # export table to latex
 library("tidyverse") # for everything else
@@ -1142,7 +1142,7 @@ df.exp2.predictions = df.exp2.predictions %>%
 
 #### For the selection of 24 cases 
 
-###### Structure the data 
+##### Structure the data 
 
 ```{r}
 df.exp2.selection = df.exp2.long %>% 
@@ -1174,7 +1174,7 @@ df.exp2.selection = df.exp2.long %>%
 ```
 
 
-###### Empirical
+##### Empirical
 
 ```{r}
 fit_brm_exp2_selection_empirical = brm(formula = rating ~ 1 + surprise_empirical + importance_empirical + (1 + surprise_empirical + importance_empirical | participant),
@@ -1186,7 +1186,7 @@ fit_brm_exp2_selection_empirical = brm(formula = rating ~ 1 + surprise_empirical
 fit_brm_exp2_selection_empirical %>% summary()
 ```
 
-###### Model
+##### Model
 
 ```{r}
 df.data = fitted(newdata = df.exp2.selection,
@@ -1928,8 +1928,6 @@ fit_brm_exp3_importance_wrongness %>% summary()
 ## Tables 
 
 ### Bayesian mixed effects model 
-
-#### Overal 
 
 ```{r}
 fit_brm_exp3_importance_overall %>% 
