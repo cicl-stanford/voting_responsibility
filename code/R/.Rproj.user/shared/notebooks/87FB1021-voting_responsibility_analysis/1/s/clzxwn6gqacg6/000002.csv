@@ -1,4 +1,0 @@
-"0","a = rjson::fromJSON(df.exp2$datastring[i])
-"
-"2","Error in rjson::fromJSON(df.exp2$datastring[i]) : object 'i' not found
-"
