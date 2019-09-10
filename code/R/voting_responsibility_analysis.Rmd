@@ -1,6 +1,6 @@
 ---
 title: "Responsibility in voting scenarios"
-author: "Antonia Langenhoff & Tobias Gerstenberg"
+author: "Tobias Gerstenberg & Antonia Langenhoff"
 date: '`r format(Sys.Date(), "%B %d, %Y")`'
 output:
   bookdown::html_document2:
@@ -21,19 +21,20 @@ knitr::opts_chunk$set(
 # Load packages 
 
 ```{r, message=FALSE}
-library("RSQLite")   # for reading in db files 
-library("tidyjson")  # install via: devtools::install_github("colearendt/tidyjson")
-library("knitr")     # for RMarkdown 
-library("lubridate") # for dealing with dates
-library("lsr")       # for wideToLong() function
-library("janitor")   # for cleaning variable names 
-library("DT")        # nice html tables
-library("Hmisc")     # smean function for bootstrapped confidence intervals
-library("broom")     # tidy regression results
-library("brms")      # Bayesian mixed effects models
-library("tidybayes") # for tidying up results from brms
-library("xtable")    # export table to latex
-library("tidyverse") # for everything else
+library("RSQLite")    # for reading in db files 
+library("tidyjson")   # install via: devtools::install_github("colearendt/tidyjson")
+library("knitr")      # for RMarkdown 
+library("lubridate")  # for dealing with dates
+library("lsr")        # for wideToLong() function
+library("janitor")    # for cleaning variable names 
+library("DT")         # nice html tables
+library("Hmisc")      # smean function for bootstrapped confidence intervals
+library("broom")      # tidy regression results
+library("brms")       # Bayesian mixed effects models
+library("tidybayes")  # for tidying up results from brms
+library("xtable")     # export table to latex
+library("kableExtra") # nice html data tables in Rmarkdown
+library("tidyverse")  # for everything else
 ```
 
 ```{r}
@@ -570,29 +571,53 @@ func_posterior_difference(data = df.exp1.posterior_importance_fitted,
 ```{r}
 df.exp1.trialinfo %>% 
   select(trial, person, p1:p5, v1:v5, threshold = rule, outcome) %>% 
-  xtable() %>%
-  print(include.rownames = FALSE)
+  # xtable() %>%
+  # print(include.rownames = FALSE)
+  kable() %>% 
+  kable_styling(fixed_thead = T,
+                bootstrap_options = "striped")
 ```
 
 ### Posterior inferences 
 
 ```{r}
+parameters = fit_brm_exp1_surprise_bayesian %>% 
+  fixef() %>% 
+  as_tibble() %>%
+  pull(Estimate)
+
 df.predictions %>% 
-  select(situation,
-         n_same, n_same_yes, party_same, vote_same,
-         n_other, n_other_yes, party_other, vote_other,
+  rowwise() %>%
+  mutate(unusual = sum(n_same - n_same_yes) + sum(n_other_yes)) %>% 
+  ungroup() %>% 
+  filter((unusual / (n_same + n_other)) <= .5) %>% 
+  mutate(trial = 1:n()) %>% 
+  select(-unusual) %>%
+  mutate(surprise_same_yes = parameters[1] + parameters[2] * (1 - vote_same),
+         surprise_other_yes = parameters[1] + parameters[2] * (1 - vote_other)) %>% 
+  mutate_at(vars(contains("n_")),
+          ~ as.character(.)) %>%
+  mutate_at(vars(contains("party"),
+                 contains("vote"),
+                 contains("surprise"),
+                 policy),
+            ~ round(., 2)) %>% 
+  select(trial = situation,
+         n_same, n_same_yes, party_same, vote_same, surprise_same_yes, 
+         n_other, n_other_yes, party_other, vote_other, surprise_other_yes,
          policy) %>% 
-  mutate_at(.vars = vars(policy, party_same, party_other, vote_same, vote_other),
-            .f = ~ round(., 2)) %>% 
-  xtable() %>%
-  print(include.rownames = FALSE)
+  # xtable() %>%
+  # print(include.rownames = FALSE)
+  kable() %>% 
+  kable_styling(bootstrap_options = "striped") %>% 
+  scroll_box(width = "100%")
 ```
 
 ## Plots
 
 ### Generative model 
 
-```{r}
+```{r, eval=F}
 
 func_draw_beta = function(shape1, shape2){
   ggplot(data = tibble(x = c(0, 1)),
@@ -1485,9 +1510,14 @@ df.exp2.long %>%
                           levels = c("not passed", "passed"),
                           labels = 0:1)) %>% 
   select(trial, p1, p2, p3, v1, v2, v3, threshold = rule, outcome) %>% 
-  xtable(digits = 0) %>%
-  print(include.rownames = F,
-        booktabs = T)
+  # xtable(digits = 0) %>%
+  # print(include.rownames = F,
+  #       booktabs = T)
+  kable() %>% 
+  kable_styling(fixed_thead = T,
+                bootstrap_options = "striped") %>% 
+  scroll_box(height = "500px")
+  
 ```
 
 #### 5 committee cases
@@ -1508,15 +1538,19 @@ df.exp2.long %>%
                           levels = c("not passed", "passed"),
                           labels = 0:1)) %>% 
   select(trial, p1, p2, p3, p4, p5, v1, v2, v3, v4, v5, threshold = rule, outcome) %>% 
-  xtable(digits = 0) %>%
-  print(include.rownames = F,
-        booktabs = T)
+  # xtable(digits = 0) %>%
+  # print(include.rownames = F,
+  #       booktabs = T)
+  kable() %>% 
+  kable_styling(fixed_thead = T,
+                bootstrap_options = "striped") %>% 
+  scroll_box(height = "500px")
 ```
 
 
 ### Bayesian mixed effects model 
 
-#### Overal 
+#### Overall 
 
 ```{r}
 fit_brm_exp2_responsibility_bayesian %>% 
@@ -1527,16 +1561,18 @@ fit_brm_exp2_responsibility_bayesian %>%
   mutate_if(is.numeric, ~ round(., 2)) %>% 
   rename(`lower 95% CI` = lower,
          `upper 95% CI` = upper) %>% 
-  xtable() %>% 
-  print(include.rownames = F,
-        booktabs = T)
+  # xtable() %>% 
+  # print(include.rownames = F,
+  #       booktabs = T)
+  kable() %>% 
+  kable_styling(bootstrap_options = "striped")
 ```
 
 ## Plots 
 
 ### Scatterplot 
 
-##### Overall 
+#### Overall 
 
 ```{r}
 df.plot = fit_brm_exp2_responsibility_bayesian %>% 
@@ -1581,7 +1617,7 @@ ggplot(data = df.plot,
 #        height = 5)
 ```
 
-##### Selection of cases 
+#### Selection of cases 
 
 ```{r}
 df.data = df.exp2.regression.means %>%
@@ -1938,9 +1974,11 @@ fit_brm_exp3_importance_overall %>%
   mutate_if(is.numeric, ~ round(., 2)) %>% 
   rename(`lower 95% CI` = lower,
          `upper 95% CI` = upper) %>% 
-  xtable() %>% 
-  print(include.rownames = F,
-        booktabs = T)
+  # xtable() %>% 
+  # print(include.rownames = F,
+  #       booktabs = T)
+  kable() %>% 
+  kable_styling(bootstrap_options = "striped")
 ```
 
 ## Plots 
