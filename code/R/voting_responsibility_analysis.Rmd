@@ -1985,6 +1985,8 @@ fit_brm_exp3_importance_overall %>%
 
 ### Bars with mean judgments
 
+- https://stackoverflow.com/questions/12409960/ggplot2-annotate-outside-of-plot
+
 ```{r}
 # \u21e6 = left arrow
 # \u21e8 = right arrow
@@ -2016,30 +2018,49 @@ ggplot(data = df.plot,
   geom_linerange(mapping = aes(ymin = rating_low,
                                ymax = rating_high),
                  size = 1) +
+  geom_text(data = tibble(label = c("neutral condition",
+                                    "moral condition",
+                                    "wrongness condition"),
+                          condition = c("neutral", "moral", "wrongness"),
+                          x = Inf,
+                          y = 0),
+            mapping = aes(label = label,
+                          x = x,
+                          y = y),
+            vjust = -1,
+            hjust = 0,
+            fontface = "bold",
+            size = 4.5) +
+  # geom_text(aes(label = "test", x = Inf, y = Inf), hjust = -1) + 
   geom_hline(yintercept = -0.5,
              size = 1) +
   facet_grid(cols = vars(condition),
-             scales = "free") + 
+             scales = "free",
+             switch = "both",
+             labeller = as_labeller(c(neutral = "responsibility",
+                                      moral = "responsibility",
+                                      wrongness = "wrongness") ) ) + 
   labs(y = "mean rating",
        caption = "T = threshold, \u21e8 = focus, \u2713 = yes, \u2717 = no") +
   scale_y_continuous(limits = c(-0.5, 100),
                      expand = c(0, 0)) + 
-  coord_flip() +
+  coord_flip(clip = "off") +
   theme(text = element_text(size = 20),
         axis.text.y = element_text(family = "Arial Unicode MS",
                                    hjust = 0),
+        axis.title.x = element_blank(),
         axis.title.y = element_blank(),
         axis.ticks.y = element_blank(),
         strip.background = element_blank(),
-        strip.text = element_text(hjust = 0,
-                                  face = "bold"),
+        strip.text = element_text(size = 16),
         panel.spacing.x = unit(1, "cm"),
         axis.line.y = element_blank(),
-        plot.margin = margin(t = 0, r = 0.8, b = 0.1, l = 0.2, unit = "cm"),
+        plot.margin = margin(t = 0.8, r = 0.8, b = 0.1, l = 0.2, unit = "cm"),
         plot.caption = element_text(family = "Arial Unicode MS",
                                     # color = "gray20",
                                     hjust = 1,
-                                    margin = margin(t = 0.5, unit = "cm"))) 
+                                    margin = margin(t = 0.5, unit = "cm")),
+        strip.placement = "outside") 
 
 # ggsave(file = "../../figures/plots/experiment3_bars.pdf",
 #        width = 8,
