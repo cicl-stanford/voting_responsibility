@@ -685,10 +685,10 @@ func_draw_beta_vote(data = tmp5, party = "other")
 # \n = line break
 
 x_labels = 
-  c("T: 5\nS \u2713\u21e6\nS \u2713\nS \u2713\nO \u2713\nO \u2713",
-    "T: 1\nS \u2713\u21e6\nS \u2713\nS \u2713\nS \u2713\nS \u2713",
-    "T: 1\nO \u2713\u21e6\nO \u2713\nO \u2717\nO \u2717\nO \u2717",
-    "T: 1\nO \u2713\u21e6\nO \u2717\nO \u2717\nO \u2717\nO \u2717")
+  c("T=5\nS \u2713\u21e6\nS \u2713\nS \u2713\nO \u2713\nO \u2713",
+    "T=1\nS \u2713\u21e6\nS \u2713\nS \u2713\nS \u2713\nS \u2713",
+    "T=1\nO \u2713\u21e6\nO \u2713\nO \u2717\nO \u2717\nO \u2717",
+    "T=1\nO \u2713\u21e6\nO \u2717\nO \u2717\nO \u2717\nO \u2717")
 
 df.plot = df.exp1.long %>% 
   filter(trial < 5) %>% 
@@ -778,10 +778,10 @@ ggplot(data = df.plot,
                                     margin = margin(t = 0.5, unit = "cm"),
                                     size = 12))
 
-ggsave(file = "../../figures/plots/experiment1_bars.pdf",
-       width = 8,
-       height = 5,
-       device = cairo_pdf)
+# ggsave(file = "../../figures/plots/experiment1_bars.pdf",
+#        width = 8,
+#        height = 5,
+#        device = cairo_pdf)
 ```
 
 
@@ -1715,7 +1715,7 @@ df.plot = fit_brm_exp2_selection_empirical %>%
   rowwise() %>%
   mutate(n_same_no = n_same - n_same_yes,
          n_other_no = n_other - n_other_yes,
-    label = str_c(index, ". ", "T:", rule, " \u21e8",
+    label = str_c(index, ". ", "T=", rule, " \u21e8",
                        ifelse(party == 1, "S:", "O:"),
                        ifelse(vote == 1, "\u2713 ", "\u2717 "),
                   ifelse(n_same_yes != 0, str_c(rep("S:\u2713 ", n_same_yes), collapse = ""), ""),
@@ -1995,11 +1995,11 @@ fit_brm_exp3_importance_overall %>%
 # \n = line break
 
 x_labels = c(
-  "1. T1: \u21e8 \u2713 \u2717 \u2717 \u2717 \u2717",
-  "2. T1: \u21e8 \u2713 \u2713 \u2717 \u2717 \u2717",
-  "3. T1: \u21e8 \u2713 \u2713 \u2713 \u2713 \u2717",
-  "4. T2: \u21e8 \u2713 \u2713 \u2713 \u2717 \u2717",
-  "5. T2: \u21e8 \u2713 \u2713 \u2713 \u2713 \u2713")
+  "1. T=1 \u21e8 \u2713 \u2717 \u2717 \u2717 \u2717",
+  "2. T=1 \u21e8 \u2713 \u2713 \u2717 \u2717 \u2717",
+  "3. T=1 \u21e8 \u2713 \u2713 \u2713 \u2713 \u2717",
+  "4. T=2 \u21e8 \u2713 \u2713 \u2713 \u2717 \u2717",
+  "5. T=2 \u21e8 \u2713 \u2713 \u2713 \u2713 \u2713")
 
 df.plot = df.exp3.regression %>% 
   mutate(labels = factor(trial,
