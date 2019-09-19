@@ -2018,10 +2018,10 @@ ggplot(data = df.plot,
   geom_linerange(mapping = aes(ymin = rating_low,
                                ymax = rating_high),
                  size = 1) +
-  geom_text(data = tibble(label = c("neutral condition",
+  geom_text(data = tibble(label = factor(c("neutral condition",
                                     "moral condition",
-                                    "wrongness condition"),
-                          condition = c("neutral", "moral", "wrongness"),
+                                    "wrongness condition")),
+                          condition = factor(c("neutral", "moral", "wrongness")),
                           x = Inf,
                           y = 0),
             mapping = aes(label = label,
@@ -2039,7 +2039,7 @@ ggplot(data = df.plot,
              switch = "both",
              labeller = as_labeller(c(neutral = "responsibility",
                                       moral = "responsibility",
-                                      wrongness = "wrongness") ) ) + 
+                                      wrongness = "wrongness"))) + 
   labs(y = "mean rating",
        caption = "T = threshold, \u21e8 = focus, \u2713 = yes, \u2717 = no") +
   scale_y_continuous(limits = c(-0.5, 100),
