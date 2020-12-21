@@ -11,42 +11,60 @@ output:
     highlight: tango
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(
-  comment = "",
-  results = "hold",
-  fig.show = "hold")
-```
-
 # Load packages 
 
 ```{r, message=FALSE}
-library("RSQLite")    # for reading in db files 
-library("tidyjson")   # install via: devtools::install_github("colearendt/tidyjson")
-library("knitr")      # for RMarkdown 
-library("lubridate")  # for dealing with dates
-library("lsr")        # for wideToLong() function
-library("janitor")    # for cleaning variable names 
-library("DT")         # nice html tables
-library("Hmisc")      # smean function for bootstrapped confidence intervals
-library("broom")      # tidy regression results
-library("brms")       # Bayesian mixed effects models
-library("tidybayes")  # for tidying up results from brms
-library("xtable")     # export table to latex
-library("kableExtra") # nice html data tables in Rmarkdown
-library("tidyverse")  # for everything else
+library("RSQLite")      # for reading in db files 
+library("tidyjson")     # for reading in json files 
+library("knitr")        # for RMarkdown 
+library("lubridate")    # for dealing with dates
+library("lsr")          # for wideToLong() function
+library("janitor")      # for cleaning variable names 
+library("DT")           # nice html tables
+library("Hmisc")        # bootstrapped confidence intervals
+library("broom.mixed")  # tidy regression results
+library("brms")         # Bayesian mixed effects models
+library("tidybayes")    # for tidying up results from brms
+library("xtable")       # export table to latex
+library("kableExtra")   # nice html data tables in Rmarkdown
+library("tidyverse")    # for everything else
 ```
 
 ```{r}
 # set ggplot theme 
-theme_set(
-  theme_classic()
-)
+theme_set(theme_classic())
+
+# set knitr options 
+opts_chunk$set(comment = "",
+               results = "hold",
+               fig.show = "hold")
+
+# suppress summarize warnings 
+options(dplyr.summarise.inform = F)
 ```
 
 # Functions 
 
 ```{r}
+# function for printing out html or latex tables 
+print_table = function(data, format = "html", digits = 2){
+  if(format == "html"){
+    data %>% 
+      kable(digits = digits) %>% 
+      kable_styling()
+  }else if(format == "latex"){
+    data %>% 
+      xtable(digits = digits,
+             caption = "Caption",
+             label = "tab:table") %>%
+      print(include.rownames = F,
+            booktabs = T,
+            sanitize.colnames.function = identity,
+            caption.placement = "top")
+  }
+}
+
+# root mean squared error 
 rmse = function(x, y){
   return(sqrt(mean((x - y)^2)))
 }
@@ -63,7 +81,8 @@ df.exp1 = read.csv(file="../../data/experiment_1/experiment_1.csv",
                        stringsAsFactors = F) %>% 
   clean_names() %>% 
   filter(test_i_1 != "") %>% # filter complete participants 
-  mutate_at(.vars = vars(duration_in_seconds, test_i_1:x15_s_1, age_1_text), .funs = as.numeric)
+  mutate(across(c(duration_in_seconds, test_i_1:x15_s_1, age_1_text), 
+                as.numeric))
 ```
 
 ### Bayesian inference model
@@ -167,7 +186,7 @@ df.exp1.demographics = df.exp1 %>%
             n_female = sum(gender == "Female"))
 
 df.exp1.demographics %>% 
-  print()
+  print_table()
 ```
 
 ### Participant feedback
@@ -355,15 +374,16 @@ func_model_evaluation(fit = fit_brm_exp1_surprise_disp,
 
 ###### Model coefficients 
 
-```{r}
-  tibble(model = c("fit_brm_exp1_surprise_bayesian",
-                   "fit_brm_exp1_surprise_disp")) %>% 
-  mutate(fit   = map(model, get)) %>% 
-  mutate(tidy  = map(fit, tidy)) %>% 
+```{r, warning=F, message=F}
+tibble(model = c("fit_brm_exp1_surprise_bayesian",
+                 "fit_brm_exp1_surprise_disp")) %>% 
+  mutate(fit = map(model, get)) %>% 
+  mutate(tidy = map(fit, ~ tidy(.,
+                                effects = "fixed",
+                                conf.method = "HPDinterval"))) %>% 
   unnest(tidy) %>% 
-  filter(term != "lp__",
-         str_detect(term, "b_")) %>% 
-  mutate_if(is.numeric, ~ round(., 2))
+  select(-c(fit, effect, component)) %>% 
+  print_table()
 ```
 
 ###### loo
@@ -457,16 +477,17 @@ func_model_evaluation(fit = fit_brm_exp1_importance_contribution,
 
 ###### Model coefficients 
 
-```{r}
+```{r, warning=F, message=F}
   tibble(model = c("fit_brm_exp1_importance_bayesian",
                    "fit_brm_exp1_importance_pivotality",
                    "fit_brm_exp1_importance_contribution")) %>% 
-  mutate(fit   = map(model, get)) %>% 
-  mutate(tidy  = map(fit, tidy)) %>% 
+  mutate(fit = map(model, get)) %>% 
+  mutate(tidy = map(fit, ~ tidy(.,
+                                effects = "fixed",
+                                conf.method = "HPDinterval"))) %>% 
   unnest(tidy) %>% 
-  filter(term != "lp__",
-         str_detect(term, "b_")) %>% 
-  mutate_if(is.numeric, ~ round(., 2))
+  select(-c(fit, effect, component)) %>% 
+  print_table()
 ```
 
 ###### loo
@@ -515,7 +536,7 @@ func_posterior_difference = function(data, trial1, trial2){
     mutate(difference = .data[[trial1]] - .data[[trial2]]) %>% 
     pull(difference) %>% 
     mean_hdci() %>% 
-    mutate_if(is.numeric, ~round(., 2)) %>% 
+    mutate(across(where(is.numeric), ~round(., 2))) %>% 
     summarize(difference = str_c("(", y, " [", ymin, ", ", ymax, "])")) %>% 
     print()  
 }
@@ -553,7 +574,7 @@ df.exp1.posterior_importance_fitted %>%
   mutate(difference = (`1` + `4`)/2 - `3`) %>% 
   pull(difference) %>% 
   mean_hdci() %>% 
-  mutate_if(is.numeric, ~round(., 2)) %>% 
+  mutate(across(where(is.numeric), ~round(., 2))) %>% 
   summarize(difference = str_c("(", y, " [", ymin, ", ", ymax, "])")) %>% 
   print()
 
@@ -595,13 +616,13 @@ df.predictions %>%
   select(-unusual) %>%
   mutate(surprise_same_yes = parameters[1] + parameters[2] * (1 - vote_same),
          surprise_other_yes = parameters[1] + parameters[2] * (1 - vote_other)) %>% 
-  mutate_at(vars(contains("n_")),
-          ~ as.character(.)) %>%
-  mutate_at(vars(contains("party"),
-                 contains("vote"),
-                 contains("surprise"),
-                 policy),
-            ~ round(., 2)) %>% 
+  mutate(across(.cols = contains("n_"),
+                .fns = ~ as.character(.))) %>%
+  mutate(across(.cols = c(contains("party"),
+                  contains("vote"),
+                  contains("surprise"),
+                  policy),
+                .fns = ~ round(., 2))) %>% 
   select(trial = situation,
          n_same, n_same_yes, party_same, vote_same, surprise_same_yes, 
          n_other, n_other_yes, party_other, vote_other, surprise_other_yes,
@@ -735,7 +756,7 @@ ggplot(data = df.plot,
                      y = rating,
                      group = question,
                      fill = question)) + 
-  stat_summary(fun.y = "mean",
+  stat_summary(fun = "mean",
                geom = "bar",
                size = 1,
                # shape = 21, 
@@ -990,7 +1011,7 @@ df.exp2.demographics %>%
             time_mean = round(mean(time)/60, 2),
             time_sd = round(sd(time)/60, 2),
             n_female = sum(sex == "female")) %>% 
-  mutate_if(is.numeric, list(~ round(., 2)))
+  print_table()
 ```
 
 ### Participant feedback 
@@ -1072,7 +1093,7 @@ df.exp2.long = wideToLong(df.exp2.wide,
   left_join(df.exp2.demographics %>% 
               select(participant, condition),
               by = "participant") %>% 
-  mutate_at(vars(person, party, vote), as.numeric) %>% 
+  mutate(across(c(person, party, vote), as.numeric)) %>% 
   select(participant, condition, trial, order, support, rule, outcome, size, sliders, person, party, vote, rating) %>% 
   filter(!is.na(party))
   
@@ -1377,7 +1398,8 @@ fit_brm_exp2_selection_empirical %>%
   clean_names() %>%
   summarize(r_empirical = cor(estimate, rating),
             rmse_empirical = rmse(estimate, rating)) %>% 
-  mutate_all(~round(., 2))
+  mutate(across(.cols = everything(),
+                .fns = ~round(., 2)))
 ```
 
 ###### Based on model predictions 
@@ -1411,7 +1433,7 @@ fit_brm_exp2_selection_model %>%
   clean_names() %>% 
   summarize(r_model = cor(estimate, rating),
             rmse_model = rmse(estimate, rating)) %>% 
-  mutate_all(~round(., 2))
+  print_table()
 ```
 
 #### Overall 
@@ -1431,7 +1453,7 @@ fit_brm_exp2_responsibility_bayesian %>%
   bind_cols(df.data) %>% 
   summarize(r = cor(estimate, rating),
             rmse = rmse(estimate, rating)) %>% 
-  mutate_all(~round(., 2))
+  print_table()
 
 # ONLY SURPRISE MODEL 
 fit_brm_exp2_responsibility_surprise %>% 
@@ -1442,7 +1464,7 @@ fit_brm_exp2_responsibility_surprise %>%
   bind_cols(df.data) %>% 
   summarize(r = cor(estimate, rating),
             rmse = rmse(estimate, rating)) %>% 
-  mutate_all(~round(., 2))
+  print_table()
 
 # ONLY IMPORTANCE MODEL 
 fit_brm_exp2_responsibility_importance %>% 
@@ -1453,7 +1475,7 @@ fit_brm_exp2_responsibility_importance %>%
   bind_cols(df.data) %>% 
   summarize(r = cor(estimate, rating),
             rmse = rmse(estimate, rating)) %>% 
-  mutate_all(~round(., 2))
+  print_table()
 
 # FULL MODEL WITH OUTCOME 
 fit_brm_exp2_responsibility_bayesian_outcome %>% 
@@ -1464,7 +1486,7 @@ fit_brm_exp2_responsibility_bayesian_outcome %>%
   bind_cols(df.data) %>% 
   summarize(r = cor(estimate, rating),
             rmse = rmse(estimate, rating)) %>% 
-  mutate_all(~round(., 2))
+  print_table()
   
 ```
 
@@ -1552,20 +1574,15 @@ df.exp2.long %>%
 
 #### Overall 
 
-```{r}
+```{r, warning=F, message=F}
 fit_brm_exp2_responsibility_bayesian %>% 
-  tidy() %>% 
-  filter(str_detect(term, "b_")) %>% 
-  mutate(term = str_remove(term, "b_"),
-         term = tolower(term)) %>% 
-  mutate_if(is.numeric, ~ round(., 2)) %>% 
-  rename(`lower 95% CI` = lower,
-         `upper 95% CI` = upper) %>% 
-  # xtable() %>% 
-  # print(include.rownames = F,
-  #       booktabs = T)
-  kable() %>% 
-  kable_styling(bootstrap_options = "striped")
+  tidy(effects = "fixed",
+       conf.method = "HPDinterval",
+       fix.intercept = F) %>% 
+  select(-c(effect, component)) %>% 
+  rename(`lower 95% CI` = conf.low,
+         `upper 95% CI` = conf.high) %>% 
+  print_table()
 ```
 
 ## Plots 
@@ -1619,7 +1636,7 @@ ggplot(data = df.plot,
 
 #### Selection of cases 
 
-```{r}
+```{r fig.height=5, fig.width=5}
 df.data = df.exp2.regression.means %>%
   left_join(df.exp1.trialinfo %>% 
               select(trial_exp1 = trial, trial = trial_exp2, person),
@@ -1679,7 +1696,7 @@ ggplot(data = df.plot,
 
 ### Means for selection of cases 
 
-```{r}
+```{r fig.height=12, fig.width=8}
 # \u21e6 = left arrow
 # \u21e8 = right arrow
 # \u2713 = check mark 
@@ -1859,7 +1876,7 @@ df.exp3.demographics %>%
             n_unspecified = sum(gender == "unspecified"),
             time_mean = round(mean(duration)/60, 2),
             time_sd = round(sd(duration)/60, 2)) %>% 
-  mutate_if(is.numeric, list(~ round(., 2)))
+  print_table()
 ```
 
 ### Participant feedback 
@@ -1881,17 +1898,20 @@ df.exp3.long %>%
   group_by(condition) %>% 
   summarize(mean = mean(rating),
             sd = sd(rating)) %>% 
-  mutate_if(is.numeric, ~ round(., 2))
+  print_table()
 ```
 
 
 ### Bayesian regression 
+
+#### Effect of condition on judgments 
 
 ```{r}
 df.data = df.exp3.long %>% 
   left_join(df.exp3.predictions,
             by = c("trial" = "trial_exp3"))
 
+# model with condition 
 fit_brm_exp3_importance_overall = brm(
   formula = rating ~ (pivotality + n_causes) * condition + (1 | participant),
   data = df.data,
@@ -1900,85 +1920,60 @@ fit_brm_exp3_importance_overall = brm(
   file = "cache/fit_brm_exp3_importance_overall"
 )
 
-fit_brm_exp3_importance_overall %>% summary()
-```
-
-
-##### neutral condition
-
-```{r}
-df.data = df.exp3.long %>% 
-  left_join(df.exp3.predictions,
-            by = c("trial" = "trial_exp3")) %>% 
-  filter(condition == "neutral")
-
-fit_brm_exp3_importance_neutral = brm(
+# model without condition
+fit_brm_exp3_importance_no_condition = brm(
   formula = rating ~ pivotality + n_causes + (1 | participant),
   data = df.data,
   cores = 2,
   seed = 1,
-  file = "cache/fit_brm_exp3_importance_neutral"
+  file = "cache/fit_brm_exp3_importance_no_condition"
 )
 
-fit_brm_exp3_importance_neutral %>% summary()
+# adding loo criterion 
+fit_brm_exp3_importance_overall = add_criterion(fit_brm_exp3_importance_overall,
+                                                criterion = "loo",
+                                                reloo = T)
+
+fit_brm_exp3_importance_no_condition = add_criterion(fit_brm_exp3_importance_no_condition,
+                                                     criterion = "loo",
+                                                     reloo = T)
+
+# model comparison 
+loo_compare(fit_brm_exp3_importance_overall,
+            fit_brm_exp3_importance_no_condition)
 ```
 
-##### moral condition
+#### Estimates for importance predictors separated by condition
 
-```{r}
+```{r, warning=F, message=F}
+func_brm_exp3 = function(data, condition){
+  brm(formula = rating ~ pivotality + n_causes + (1 | participant),
+      data = data %>% 
+        filter(condition == condition),
+      cores = 2,
+      seed = 1,
+      file = str_c("cache/fit_brm_exp3_", condition))
+}
+
 df.data = df.exp3.long %>% 
   left_join(df.exp3.predictions,
             by = c("trial" = "trial_exp3")) %>% 
-  filter(condition == "moral")
+  arrange(participant) %>% 
+  group_by(condition) %>% 
+  nest() %>% 
+  arrange(condition) %>% 
+  mutate(brm = map2(.x = data, .y = condition, ~ func_brm_exp3(.x, .y)))
 
-fit_brm_exp3_importance_moral = brm(
-  formula = rating ~ pivotality + n_causes + (1 | participant),
-  data = df.data,
-  cores = 2,
-  seed = 1,
-  file = "cache/fit_brm_exp3_importance_moral"
-)
+tmp = map(1:3, ~ df.data$brm[[.]] %>% 
+      tidy(effects = "fixed",
+           conf.level = 0.95,
+           conf.method = "HPDinterval",
+           fix.intercept = F) %>% 
+      select(-c(effect, component)))
 
-fit_brm_exp3_importance_moral %>% summary()
-```
-
-##### wrongness condition
-
-```{r}
-df.data = df.exp3.long %>% 
-  left_join(df.exp3.predictions,
-            by = c("trial" = "trial_exp3")) %>% 
-  filter(condition == "wrongness")
-
-fit_brm_exp3_importance_wrongness = brm(
-  formula = rating ~ pivotality + n_causes + (1 | participant),
-  data = df.data,
-  cores = 2,
-  seed = 1,
-  file = "cache/fit_brm_exp3_importance_wrongness"
-)
-
-fit_brm_exp3_importance_wrongness %>% summary()
-```
-
-## Tables 
-
-### Bayesian mixed effects model 
-
-```{r}
-fit_brm_exp3_importance_overall %>% 
-  tidy() %>% 
-  filter(str_detect(term, "b_")) %>% 
-  mutate(term = str_remove(term, "b_"),
-         term = tolower(term)) %>% 
-  mutate_if(is.numeric, ~ round(., 2)) %>% 
-  rename(`lower 95% CI` = lower,
-         `upper 95% CI` = upper) %>% 
-  # xtable() %>% 
-  # print(include.rownames = F,
-  #       booktabs = T)
-  kable() %>% 
-  kable_styling(bootstrap_options = "striped")
+print_table(tmp[[1]])
+print_table(tmp[[2]])
+print_table(tmp[[3]])
 ```
 
 ## Plots 
