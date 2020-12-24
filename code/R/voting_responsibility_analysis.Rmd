@@ -2062,3 +2062,61 @@ ggplot(data = df.plot,
 #        height = 5,
 #        device = cairo_pdf)
 ```
+
+# Experiment 4: Importance, surprise, responsibility, wrongfulness 
+
+## Pre-registered analysis 
+
+### Hypothesis 1: Pivotality predicts importance
+
+The fewer politicians voted in favor of the policy, the more important a politician’s vote who voted in favor is judged to be. 
+
+```{r eval=F}
+brm(formula = importance ~ 1 + pivotality + (1 + pivotality | participant),
+    data = df.exp4.long)
+```
+
+### Hypothesis 2: Moral badness predicts surprise 
+
+The more morally negative a policy is perceived, the more surprising a vote in favor of that policy is judged to be. 
+
+```{r eval=F}
+brm(formula = surprise ~ 1 + badness + (1 + badness | participant),
+    data = df.exp4.long)
+```
+
+### Hypothesis 3: Importance and surprise predict responsibility 
+
+Both judgments of importance and surprise predict judgments of responsibility. 
+
+```{r eval=F}
+brm(formula = responsibility ~ 1 + importance + surprise + (1 + importance + surprise | participant),
+    data = df.exp4.long)
+```
+
+### Hypothesis 4: Moral badness interacts with importance and surprise to predict responsibility 
+
+When judging responsibility, importance matters more for policies that are perceived as morally neutral (compared to morally negative policies), and surprise matters more for policies that are perceived as morally negative (compared to morally neutral policies). 
+
+```{r eval=F}
+brm(formula = responsibility ~ 1 + badness_dummy * (importance + surprise) + (1 + badness_dummy * (importance + surprise) | participant),
+    data = df.exp4.long)
+```
+
+### Hypothesis 5: Importance matters more for responsibility compared to wrongness 
+
+Perceived importance matters more for judgments of responsibility compared to wrongness judgments. 
+
+```{r eval=F}
+# responsibility model 
+brm(formula = responsibility ~ 1 + importance + surprise + (1 + importance + surprise | participant),
+    data = df.exp4.long)
+
+# wrongness model 
+brm(formula = wrongness ~ 1 + importance + surprise + (1 + importance + surprise | participant),
+    data = df.exp4.long)
+```
+
+
+
+
