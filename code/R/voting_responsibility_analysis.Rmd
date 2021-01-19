@@ -2117,6 +2117,60 @@ brm(formula = wrongness ~ 1 + importance + surprise + (1 + importance + surprise
     data = df.exp4.long)
 ```
 
+## Read in data 
 
+```{r}
+df.exp4 = read.csv("../../data/experiment_4/experiment_4.csv",
+                   sep = ";",
+                   fileEncoding = "UTF-8-BOM") %>% 
+  clean_names() %>% 
+  mutate(participant = 1:n()) %>% 
+  relocate(participant)
+
+
+# trial information 
+df.exp4.trialinfo = read.csv("data/experiment4_scenarios.csv",
+                             sep = ";",
+                             fileEncoding = "UTF-8-BOM")
+
+
+df.exp4.long = df.exp4 %>% 
+  select(participant, x1_b_1:x9_w_1) %>% 
+  rename_with(.fn = ~ str_remove(., "_1")) %>% 
+  pivot_longer(cols = -participant,
+               names_to = c("trial", "question"),
+               names_sep = "_",
+               values_to = "rating") %>% 
+  mutate(trial = str_remove(trial, "x"),
+         trial = as.numeric(trial),
+         question = factor(question,
+                           levels = c("b", "i", "s", "r", "w"),
+                           labels = c("badness",
+                                      "importance",
+                                      "surprise",
+                                      "responsibility",
+                                      "wrongfulness"))) %>% 
+  arrange(participant, trial)
+```
+
+## Demographic data 
+
+```{r}
+df.exp4.demographics = df.exp4 %>% 
+  select(participant, duration = duration_in_seconds, gender, age = age_1_text,
+         race = race_1_text,importance, surprise) %>% 
+  mutate(gender = tolower(gender))
+
+df.exp4.demographics %>% 
+  summarize(age_mean = round(mean(age)),
+            age_sd = round(sd(age)),
+            n_total = n(),
+            n_female = sum(gender == "female"),
+            n_male = sum(gender == "male"),
+            n_unspecified = sum(gender == "unspecified"),
+            time_mean = round(mean(duration)/60, 2),
+            time_sd = round(sd(duration)/60, 2)) %>% 
+  print_table()
+```
 
 
