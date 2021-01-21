@@ -27,6 +27,7 @@ library("brms")         # Bayesian mixed effects models
 library("tidybayes")    # for tidying up results from brms
 library("xtable")       # export table to latex
 library("kableExtra")   # nice html data tables in Rmarkdown
+library("corrr")        # for correlations 
 library("tidyverse")    # for everything else
 ```
 
@@ -2129,10 +2130,8 @@ df.exp4 = read.csv("../../data/experiment_4/experiment_4.csv",
 
 
 # trial information 
-df.exp4.trialinfo = read.csv("data/experiment4_scenarios.csv",
-                             sep = ";",
-                             fileEncoding = "UTF-8-BOM")
-
+df.exp4.trialinfo = read_csv("data/experiment4_scenarios.csv") %>% 
+  rename(bad = badness)
 
 df.exp4.long = df.exp4 %>% 
   select(participant, x1_b_1:x9_w_1) %>% 
@@ -2150,7 +2149,11 @@ df.exp4.long = df.exp4 %>%
                                       "surprise",
                                       "responsibility",
                                       "wrongfulness"))) %>% 
-  arrange(participant, trial)
+  arrange(participant, trial) %>% 
+  left_join(df.exp4.trialinfo %>% 
+              select(-policy),
+            by = "trial") %>% 
+  mutate(pivotality = 1/(votes - 1))
 ```
 
 ## Demographic data 
@@ -2172,5 +2175,28 @@ df.exp4.demographics %>%
             time_sd = round(sd(duration)/60, 2)) %>% 
   print_table()
 ```
+
+## Plots 
+
+## Stats 
+
+### Correlations 
+
+```{r, message=F}
+df.exp4.long %>% 
+  group_by(question, trial, bad, pivotality) %>% 
+  summarize(mean = mean(rating)) %>% 
+  ungroup() %>% 
+  pivot_wider(names_from = question,
+              values_from = mean) %>% 
+  select(-c(trial, bad)) %>% 
+  correlate() %>% 
+  shave() %>% 
+  fashion() %>% 
+  print_table()
+```
+
+
+
 
 

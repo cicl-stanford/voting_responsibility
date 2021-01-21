@@ -1,6 +1,25 @@
-badness;;;;;;;;;;,
-"1 (""not bad at all"");2;3;4;5;""6 (""""very bad"""")"";Votes;;;;",
-changing the font of government docs to Arial;legalize gambling in casinos;make it easier for landlords to increase rent without limitations;requiring every citizen older than 12 to have their own social media profile for official identification purposes;introduce prison sentences for extramarital affairs;introduce corporal punishment in schools;2;;;;,
-make it mandatory to keep dogs on leash at all times in public; introduce tax breaks for dog owners;ban children who are not vaccinated against Varicella from going to school;allow all citizens over the age of 21 to purchase a gun without a license;introduce prison sentences of at least 5 years for doctors who practice abortion;introduce the death penalty for minor crimes (e.g. theft);3;;;;,
-change the color of all government buildings to red;legally require every citizen to get vaccinated against the flu;introduce a fine of at least $200 for littering in public places;decriminalizing corruption for politicians;declare that sexual abuse within marriage does not count as a criminal liability;lie to citizens of the country about an oil leak that is poisening the country's drinking water;4;;;;,
-change the standard size of public trashcans from 33 gallons to 60 gallons;increase sales taxes on meat products (e.g. sausages, burgers) by 3 percent;change the legal voting age to 35 years;Exempt all politicians from paying taxes;criminalize same-sex relationships;introducing a law that makes it illegal for people with disabilities to get a job;5;;;;
+trial,policy,badness,votes
+1,introduce corporal punishment in schools,6,2
+2,introduce the death penalty for minor crimes (e.g. theft),6,3
+3,introduce prison sentences of at least 5 years for doctors who practice abortion,5,3
+4,increase sales taxes on meat products (e.g. sausages or burgers) by 3 percent,2,5
+5,Exempt all politicians from paying taxes,4,5
+6,introduce tax breaks for dog owners,2,3
+8,introducing a law that makes it illegal for people with disabilities to get a job,6,5
+9,introduce a fine of at least $200 for littering in public places,3,4
+10,ban children who are not vaccinated against Varicella from going to school,3,3
+12,change the color of all government buildings to red,1,4
+13,declare that sexual abuse within marriage does not count as a criminal liability,5,4
+14,legally require every citizen to get vaccinated against the flu,2,4
+16,change the legal voting age to 35 years,3,5
+17,allow all citizens over the age of 21 to purchase a gun without a license,4,3
+19,criminalize same-sex relationships,5,5
+20,make it easier for landlords to increase rent,3,2
+21,decriminalizing corruption for politicians,4,4
+23,change the standard size of public trashcans from 33 gallons to 60 gallons,1,5
+25,introduce prison sentences for extramarital affairs,5,2
+26,changing the font of government docs to Arial,1,2
+27,legalize gambling in casinos,2,2
+29,make it mandatory to keep dogs on leash at all times in public,1,3
+30,lie to citizens of the country about an oil leak that is poisening the country's drinking water,6,4
+31,requiring every citizen older than 12 to have their own social media profile for official identification purposes,4,2
