@@ -25,9 +25,12 @@ library("Hmisc")        # bootstrapped confidence intervals
 library("broom.mixed")  # tidy regression results
 library("brms")         # Bayesian mixed effects models
 library("tidybayes")    # for tidying up results from brms
+library("emmeans")      # for estimated marginal means 
+library("ggeffects")    # for effects plots 
 library("xtable")       # export table to latex
 library("kableExtra")   # nice html data tables in Rmarkdown
 library("corrr")        # for correlations 
+library("patchwork")    # for making figure panels
 library("tidyverse")    # for everything else
 ```
 
@@ -69,6 +72,45 @@ print_table = function(data, format = "html", digits = 2){
 rmse = function(x, y){
   return(sqrt(mean((x - y)^2)))
 }
+
+# scatter plot 
+
+fun_scatterplot = function(data, x, y){
+  ggplot(data = data,
+         mapping = aes(x = .data[[x]],
+                       y = .data[[y]])) + 
+    geom_smooth(method = "lm",
+                color = "lightblue",
+                alpha = 0.4,
+                fill = "lightblue") + 
+    geom_abline(intercept = 0,
+                slope = 1,
+                linetype = 2) +
+    geom_linerange(mapping = aes(xmin = .data[[str_c(x, "_low")]],
+                                 xmax = .data[[str_c(x, "_high")]]),
+                   alpha = 0.2) + 
+    geom_linerange(mapping = aes(ymin = .data[[str_c(y, "_low")]],
+                                 ymax = .data[[str_c(y, "_high")]]),
+                   alpha = 0.2) + 
+    geom_point(size = 2) +
+    annotate(geom = "text",
+             label = df.plot %>%
+               summarize(r = cor(.data[[x]], .data[[y]]),
+                         rmse = rmse(.data[[x]], .data[[y]])) %>%
+               mutate(across(.fns = ~ round(., 2))) %>%
+               unlist() %>%
+               str_c(names(.), " = ", .),
+             x = c(0, 0),
+             y = c(100, 90),
+             size = 7,
+             hjust = 0) + 
+    scale_x_continuous(breaks = seq(0, 100, 25)) +
+    scale_y_continuous(breaks = seq(0, 100, 25)) +
+    coord_cartesian(xlim = c(0, 100),
+                    ylim = c(0, 100)) +
+    theme(text = element_text(size = 24))
+}
+
 ```
 
 # Experiment 1: Importance and surprise judgments 
@@ -2069,6 +2111,8 @@ ggplot(data = df.plot,
 ## Read in data 
 
 ```{r, message=F, warning=F}
+set.seed(1)
+
 df.exp4 = read_csv("../../data/experiment_4/experiment_4.csv") %>% 
   clean_names() %>% 
   filter(row_number() > 2) %>% 
@@ -2078,10 +2122,13 @@ df.exp4 = read_csv("../../data/experiment_4/experiment_4.csv") %>%
 
 # trial information 
 df.exp4.trialinfo = read_csv("data/experiment4_scenarios.csv") %>% 
-  rename(bad = badness) %>% 
-  arrange(trial) %>% 
-  mutate(trial_relabel = 1:n())
+  rename(bad = badness)
 
+# replace incorrectly coded trial 
+df.exp4.trialinfo = df.exp4.trialinfo %>% 
+  mutate(votes = ifelse(trial == 10, 2, votes))
+
+# main data 
 df.exp4.long = df.exp4 %>% 
   select(participant, x1_b_1:x9_w_1) %>% 
   rename_with(.fn = ~ str_remove(., "_1")) %>% 
@@ -2089,8 +2136,8 @@ df.exp4.long = df.exp4 %>%
                names_to = c("trial", "question"),
                names_sep = "_",
                values_to = "rating") %>% 
-  mutate(trial = str_remove(trial, "x"),
-         trial = as.numeric(trial),
+  rename(trial_label = trial) %>% 
+  mutate(trial_label = as.numeric(str_remove(trial_label, "x")),
          question = factor(question,
                            levels = c("b", "i", "s", "r", "w"),
                            labels = c("badness",
@@ -2101,12 +2148,30 @@ df.exp4.long = df.exp4 %>%
   ungroup() %>% 
   left_join(df.exp4.trialinfo %>% 
               select(-policy),
-            by = "trial") %>% 
+            by = "trial_label") %>% 
   mutate(pivotality = 1/(votes - 1),
          rating = as.numeric(rating)) %>% 
-  select(everything(), -trial, trial = trial_relabel) %>% 
-  relocate(trial, .after = participant) %>% 
+  select(trial, everything(), -trial_label) %>% 
   arrange(participant, trial)
+
+# format for regression 
+df.exp4.regression = df.exp4.long %>% 
+  pivot_wider(names_from = question,
+              values_from = rating) %>% 
+  group_by(participant) %>% 
+  mutate(badness_dummy = ifelse(badness > median(badness), "bad", "neutral")) %>% 
+  ungroup()
+
+# mean judgments 
+df.exp4.regression.means = df.exp4.regression %>% 
+  group_by(trial, bad, votes, pivotality) %>% 
+  summarize(across(.cols = badness:wrongfulness,
+                   .fns = ~ smean.cl.boot(.))) %>% 
+  mutate(index = c("mean", "low", "high")) %>% 
+  ungroup() %>%
+  pivot_wider(names_from = index,
+              values_from = badness:wrongfulness) %>% 
+  rename_with(.fn = ~ str_remove(., "_mean"))
 ```
 
 ## Demographic data 
@@ -2130,8 +2195,6 @@ df.exp4.demographics %>%
   print_table()
 ```
 
-## Plots 
-
 ## Stats 
 
 ### Correlations 
@@ -2150,17 +2213,21 @@ df.exp4.long %>%
   print_table()
 ```
 
-### Pre-registered analysis 
+### Badness ratings 
 
 ```{r}
-df.exp4.regression = df.exp4.long %>% 
-  pivot_wider(names_from = question,
-              values_from = rating) %>% 
-  group_by(participant) %>% 
-  mutate(badness_dummy = ifelse(badness > median(badness), "bad", "neutral")) %>% 
-  ungroup()
+df.exp4.regression.means %>% 
+  select(trial, contains("bad")) %>% 
+  left_join(df.exp4.trialinfo %>% 
+              select(trial, policy),
+            by = "trial") %>% 
+  relocate(policy, .after = trial) %>% 
+  arrange(bad) %>% 
+  print_table()
 ```
 
+
+### Confirmatory analysis 
 
 #### Hypothesis 1: Pivotality predicts importance
 
@@ -2192,7 +2259,7 @@ fit.brm_exp4_surprise_badness = brm(
 fit.brm_exp4_surprise_badness
 ```
 
-### Hypothesis 3: Importance and surprise predict responsibility 
+#### Hypothesis 3: Importance and surprise predict responsibility 
 
 Both judgments of importance and surprise predict judgments of responsibility. 
 
@@ -2207,7 +2274,7 @@ fit.brm_exp4_responsibility_importance_surprise = brm(
 fit.brm_exp4_responsibility_importance_surprise
 ```
 
-### Hypothesis 4: Moral badness interacts with importance and surprise to predict responsibility 
+#### Hypothesis 4: Moral badness interacts with importance and surprise to predict responsibility 
 
 When judging responsibility, importance matters more for policies that are perceived as morally neutral (compared to morally negative policies), and surprise matters more for policies that are perceived as morally negative (compared to morally neutral policies). 
 
@@ -2223,9 +2290,11 @@ fit.brm_exp4_responsibility_badness_dummy = brm(
 fit.brm_exp4_responsibility_badness_dummy
 ```
 
-### Hypothesis 5: Importance matters more for responsibility compared to wrongness 
+#### Hypothesis 5: Importance matters more for responsibility compared to wrongness 
 
 Perceived importance matters more for judgments of responsibility compared to wrongness judgments. 
+
+##### without scaled variables
 
 ```{r, warning=FALSE}
 # responsibility model 
@@ -2242,4 +2311,325 @@ fit.brm_exp4_wrongfulness_importance_surprise = brm(
 fit.brm_exp4_wrongfulness_importance_surprise
 ```
 
+##### with scaled variables
+
+- note participants who gave the same response for one of these questions across all trials are removed from this analysis
+
+```{r}
+df.exp4.regression.scaled = df.exp4.regression %>% 
+  group_by(participant) %>% 
+  mutate(across(.cols = c(importance, surprise, responsibility, wrongfulness),
+                .fns = ~ scale(.))) %>% 
+  ungroup()
+
+# responsibility 
+fit.brm_exp4_responsibility_importance_surprise_scaled = brm(
+  formula = responsibility ~ 1 + importance + surprise + (1 + importance + surprise | participant),
+  data = df.exp4.regression.scaled,
+  seed = 1,
+  cores = 2,
+  file = "cache/brm_exp4_responsibility_importance_surprise_scaled")
+
+fit.brm_exp4_responsibility_importance_surprise_scaled
+
+# wrongfulness 
+fit.brm_exp4_wrongfulness_importance_surprise_scaled = brm(
+  formula = wrongfulness ~ 1 + importance + surprise + (1 + importance + surprise | participant),
+  data = df.exp4.regression.scaled,
+  seed = 1,
+  cores = 2,
+  iter = 8000,
+  control = list(adapt_delta = 0.99),
+  file = "cache/brm_exp4_wrongfulness_importance_surprise_scaled")
+
+fit.brm_exp4_wrongfulness_importance_surprise_scaled
+```
+
+
+### Exploratory analysis 
+
+#### The role of surprise and importance for responsibility 
+
+- compare a model with both surprise + importance vs. just importance 
+- model that includes both predictors performs a little better (check about random effects structure)
+
+```{r}
+fit.brm_exp4_responsibility_importance = brm(
+  formula = responsibility ~ 1 + importance + (1 + importance | participant),
+  data = df.exp4.regression,
+  seed = 1,
+  cores = 2,
+  file = "cache/fit_brm_exp4_responsibility_importance")
+
+fit.brm_exp4_responsibility_importance = add_criterion(
+  fit.brm_exp4_responsibility_importance,
+  criterion = "loo",
+  reloo = T,
+  file = "cache/brm_exp4_responsibility_importance")
+
+fit.brm_exp4_responsibility_importance_surprise = add_criterion(
+  fit.brm_exp4_responsibility_importance_surprise,
+  criterion = "loo",
+  reloo = T,
+  file = "cache/brm_exp4_responsibility_importance_surprise")
+
+loo_compare(fit.brm_exp4_responsibility_importance,
+            fit.brm_exp4_responsibility_importance_surprise)
+```
+
+## Plots 
+
+### 1. Pivotality predicts importance 
+
+```{r fig.height=6, fig.width=8}
+set.seed(1)
+
+df.plot = df.exp4.long %>% 
+  mutate(pivotality = factor(pivotality,
+                             levels = c(0.25, 1/3, 0.5, 1),
+                             labels = c("1/4", "1/3", "1/2", "1"))) %>% 
+  filter(question == "importance")
+
+ggplot(data = df.plot,
+       mapping = aes(x = pivotality,
+                     y = rating)) + 
+  stat_summary(fun.data = "mean_cl_boot",
+               size = 0.5) +
+  geom_point(alpha = 0.02,
+             position = position_jitter(width = 0.05, height = 0)) +
+  labs(y = "importance rating") + 
+  theme(text = element_text(size = 24))
+
+ggsave("../../figures/plots/experiment4_pivotality_importance.pdf",
+       width = 8,
+       height = 6)
+```
+
+### 2. Badness predicts surprise 
+
+```{r fig.height=6, fig.width=6, message=FALSE, warning=FALSE}
+df.plot = df.exp4.regression.means
+
+x = "badness"
+y = "surprise"
+
+fun_scatterplot(data = df.plot,
+                x = x,
+                y = y)
+
+ggsave("../../figures/plots/experiment4_badness_surprise.pdf",
+       width = 6,
+       height = 6)
+```
+
+### 3. Importance and surprise predict responsibility 
+
+```{r fig.height=6, fig.width=6}
+df.plot = fit.brm_exp4_responsibility_importance_surprise %>% 
+  fitted(newdata = df.exp4.regression.means,
+         re_formula = NA) %>% 
+  as_tibble() %>% 
+  clean_names() %>%
+  bind_cols(df.exp4.regression.means)
+  
+y = "responsibility"
+
+ggplot(data = df.plot,
+       mapping = aes(x = estimate,
+                     y = .data[[y]])) +
+  geom_abline(intercept = 0,
+              slope = 1,
+              linetype = 2) +
+  geom_smooth(mapping = aes(y = estimate,
+                            ymin = q2_5,
+                            ymax = q97_5),
+              stat = "identity",
+              color = "lightblue",
+              alpha = 0.4,
+              fill = "lightblue") +
+  geom_linerange(mapping = aes_string(ymin = str_c(y, "_low"),
+                               ymax = str_c(y, "_high")),
+                 alpha = 0.2) +
+  geom_point(size = 2) +
+  annotate(geom = "text",
+           label = df.plot %>% 
+             summarize(r = cor(.data[["estimate"]], .data[[y]]),
+                       rmse = rmse(.data[["estimate"]], .data[[y]])) %>% 
+             mutate(across(.fns = ~ round(., 2))) %>% 
+             unlist() %>% 
+             str_c(names(.), " = ", .),
+           x = c(25, 25), 
+           y = c(100, 95),
+           size = 7,
+           hjust = 0) + 
+  labs(x = "surprise & importance",
+       y = y) +
+  scale_x_continuous(breaks = seq(0, 100, 25)) +
+  scale_y_continuous(breaks = seq(0, 100, 25)) +
+  coord_cartesian(xlim = c(25, 100),
+                  ylim = c(25, 100)) +
+  theme(text = element_text(size = 24))
+
+ggsave("../../figures/plots/experiment4_importance_surprise_responsibility.pdf",
+       width = 6,
+       height = 6)
+```
+
+### 4. Modal badness interaction 
+
+- split into surprise low vs. high
+- 
+
+```{r}
+# df.data = df.exp4.long
+
+ggpredict(fit.brm_exp4_responsibility_badness_dummy,
+          terms = c("importance", "surprise", "badness_dummy"),
+          condition = c(surprise = 10)) %>% 
+  plot()
+```
+### 5. Importance matters more for responsibility 
+
+#### simple relationship 
+
+```{r fig.height=8, fig.width=16, message=FALSE, warning=FALSE}
+df.plot = df.exp4.regression.means
+
+p1 = fun_scatterplot(data = df.plot,
+                x = "importance",
+                y = "responsibility")
+
+p2 = fun_scatterplot(data = df.plot,
+                x = "importance",
+                y = "wrongfulness")
+
+p1 + p2
+```
+
+#### when controlling for surprise 
+
+```{r}
+df.plot = fit.brm_exp4_wrongfulness_importance_surprise %>% 
+  fitted(newdata = df.exp4.regression.means,
+         re_formula = NA) %>% 
+  as_tibble() %>% 
+  clean_names() %>%
+  bind_cols(df.exp4.regression.means)
+  
+y = "wrongfulness"
+
+ggplot(data = df.plot,
+       mapping = aes(x = estimate,
+                     y = .data[[y]])) +
+  geom_abline(intercept = 0,
+              slope = 1,
+              linetype = 2) +
+  geom_smooth(mapping = aes(y = estimate,
+                            ymin = q2_5,
+                            ymax = q97_5),
+              stat = "identity",
+              color = "black",
+              alpha = 0.4,
+              fill = "lightblue") +
+  geom_linerange(mapping = aes_string(ymin = str_c(y, "_low"),
+                               ymax = str_c(y, "_high")),
+                 alpha = 0.1) +
+  geom_point(size = 2) +
+  annotate(geom = "text",
+           label = df.plot %>% 
+             summarize(r = cor(.data[["estimate"]], .data[[y]]),
+                       rmse = rmse(.data[["estimate"]], .data[[y]])) %>% 
+             mutate(across(.fns = ~ round(., 2))) %>% 
+             unlist() %>% 
+             str_c(names(.), " = ", .),
+           x = c(25, 25), 
+           y = c(100, 95),
+           size = 6,
+           hjust = 0) + 
+  labs(x = "model prediction",
+       y = y) +
+  scale_x_continuous(breaks = seq(0, 100, 25)) +
+  scale_y_continuous(breaks = seq(0, 100, 25)) +
+  coord_cartesian(xlim = c(25, 100),
+                  ylim = c(25, 100)) +
+  theme(text = element_text(size = 20))
+```
+
+
+
+### Votes
+
+```{r}
+set.seed(1)
+
+df.plot = df.exp4.long %>% 
+  mutate(votes = as.factor(votes),
+         question = factor(question,
+                           levels = c("importance", "responsibility",
+                                      "surprise", "badness", "wrongfulness")))
+
+ggplot(data = df.plot,
+       mapping = aes(x = votes,
+                     y = rating,
+                     color = question)) + 
+  stat_summary(fun.data = "mean_cl_boot",
+               position = position_dodge(width = 0.5))
+  
+```
+
+
+### Votes, badness, responsibility 
+
+```{r}
+y = "responsibility"
+
+df.plot = df.exp4.long %>% 
+  filter(question == y) %>% 
+  mutate(across(.cols = c(bad, votes, trial),
+                .fns = ~ as.factor(.)))
+
+ggplot(data = df.plot, 
+       mapping = aes(x = votes,
+                     y = rating,
+                     color = bad)) + 
+  stat_summary(fun.data = "mean_cl_boot",
+               position = position_dodge(width = 0.9)) + 
+  geom_point(alpha = 0.05,
+             position = position_jitterdodge(dodge.width = 0.9,
+                                             jitter.width = 0.1,
+                                             jitter.height = 0)) +
+  # scale_color_brewer(palette = "Set1") + 
+  theme(legend.position = "bottom") + 
+  guides(color = guide_legend(nrow = 1))
+```
+
+```{r}
+df.exp4.regression.means %>% 
+  select(trial, bad, votes, responsibility) %>% 
+  left_join(df.exp4.trialinfo,
+            by = c("trial", "bad", "votes"))
+
+```
+
+
+
+### Per trial 
+
+```{r fig.height=20, fig.width=8}
+df.plot = df.exp4.long %>% 
+  mutate(across(.cols = c(bad, votes, trial),
+                .fns = ~ as.factor(.)))
+
+ggplot(data = df.plot,
+       mapping = aes(x = trial,
+                     y = rating,
+                     group = question,
+                     shape = votes,
+                     color = bad)) + 
+  stat_summary(fun.data = "mean_cl_boot",
+               position = position_dodge(width = 1)) + 
+  geom_point(alpha = 0.1,
+             position = position_dodge(width = 1)) + 
+  facet_wrap(~ question, ncol = 1)
+```
 
