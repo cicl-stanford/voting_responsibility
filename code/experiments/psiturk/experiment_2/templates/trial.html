@@ -1,0 +1,95 @@
+<div class="slide" id="instructions-training-1">
+  <h1>Instructions</h1>
+  <div class="blue">
+    <p>Your task in this experiment is to decide to what extent different politicians who voted in a committee on whether a new policy should be passed are responsible for the outcome of the vote.</p>
+    <p>You will see the outcomes of a number of different votes on different policies. The votes differ in how many people were in the committee. Whether or not a policy is passed depends on how many of the politicians voted for it. Some policies require more votes than others in order to be passed. Below is an example of a vote:</p>
+    <hr />
+    <div class = "intro_tables">
+      <div class="intro_table">
+        <h3>Policy information</h3>
+        <p><b>Number</b>:  #123187 </p>
+        <p><b>Supported by</b>: <font color = "red"> The Republican party</font></p>
+        <p><b>Number of people in the committee</b>: 4</p>
+        <p><b>Number of votes in favor of policy required</b>: 2</p>
+      </div>
+
+      <div class="intro_table">
+        <h3>Votes</h3>
+        <table>
+          <tr><th></th><th>Party affiliation</th><th>Vote (&#10004 = for, &#10008 = against)</th>
+            <tr><td>John</td><td><font color = "red"> Republican </font></td><td> &#10004 </td></tr>
+            <tr><td>Bill</td><td><font color = "red"> Republican </font></td><td> &#10004 </td></tr>
+            <tr><td>Steve</td><td><font color = "blue"> Democrat </font></td><td> &#10008 </td></tr>
+            <tr><td>Robert</td><td><font color = "blue"> Democrat </font></td><td> &#10004 </td></tr>
+          </table>
+        </div>
+      </div>
+      <div class="spacer"></div>
+      <p style="font-size:18px; text-align: center; margin-top:1em;"><b>Outcome</b>: The policy was <b> passed</b>.</p><p style="font-size:17px; text-align: center;"> 3 out of 4 committee members voted in favor of the policy and at least 2 votes were required for the policy to pass.</p>
+      <hr />
+      <p>In this example, the vote was about policy #123187 which was supported by the Republican party. 4 politicians were in the committee. In order for the policy to be passed, at least 2 committee members were required to vote for it.</p>
+
+      <p><b>John</b>, a Republican, voted for the policy. So did <b>Bill</b>, also a Republican. <b>Steve</b>, a Democrat, didn't vote for the policy. <b>Robert</b>, another Democrat, voted in favor of the policy.</p>
+
+      <p>Since 3 out of 4 committee members voted for the policy and 2 votes were required for the policy to pass, the policy was accepted.</p> 
+
+      <p>Each of the committee members knows the following information before they make a decision whether to vote for the policy:</p>
+
+      <ol type="a">
+        <li>the number of people in the committee</li>
+        <li>the minimum number of votes required for the policy to pass</li>
+        <li>each politician's political affiliation</li>
+        <li>whether the policy is supported by the Democratic or Republican party</li>
+      </ol>
+
+      <p>In the experiment, you will judge to what extent different committee members are responsible for whether or not a given policy was passed.</p>
+
+      <p align = "center"> Press <b>Start</b> to begin with the experiment. </p>
+
+    </div>
+
+    <div class="continue">
+      <button type="button" class="next">Start</button>
+    </div>
+  </div>
+
+  <div class="slide" id="trial">
+    <div id="progress">
+      <div id="progress-text">Progress</div>
+      <div id="indicator-container">
+        <div id="indicator-outer">
+          <div id="indicator-stage"></div>
+        </div>
+      </div>
+      <div class="spacer"></div>
+    </div>
+    <hr />
+    <div id="stim">
+      <div id ="prompt-text"></div>
+      <hr />
+
+      <div id = "table_container">
+       <div id = "left_table"> 
+        <h2>Policy information</h2>
+        <div id = "policy_text"></div>
+        <div id = "policy_support"></div>
+        <div id = "voters"></div>
+        <div id = "vote_rule"></div>
+      </div>
+      <div id = "right_table"> 
+        <h2>Votes</h2>
+        <div class = "tables" id = "table_vote"></div>
+        <br />
+      </div>
+    </div>
+    <div class="spacer"></div>
+    <div id = "vote_outcome"></div>
+    <p class="stim_text"> </p>
+    <hr /> 
+  </div>
+  <div id="choices"></div>
+  
+  <div class="continue">
+    <button type="button" id="trial_next" class="next">Continue</button>
+  </div>
+</div>
