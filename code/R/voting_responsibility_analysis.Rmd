@@ -13,7 +13,7 @@ output:
 
 # Load packages 
 
-```{r, message=FALSE}
+```{r, message=FALSE, warning=FALSE}
 library("RSQLite")      # for reading in db files 
 library("tidyjson")     # for reading in json files 
 library("knitr")        # for RMarkdown 
@@ -2214,6 +2214,14 @@ df.exp4.demographics %>%
             time_mean = round(mean(duration)/60, 2),
             time_sd = round(sd(duration)/60, 2)) %>% 
   print_table()
+```
+
+### Participant feedback 
+
+```{r}
+df.exp4.demographics %>% 
+  select(participant, importance, surprise) %>% 
+  datatable()
 ```
 
 ## Stats 
