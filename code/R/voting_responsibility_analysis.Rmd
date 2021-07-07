@@ -201,7 +201,8 @@ df.exp1.demographics = df.exp1 %>%
             time_sd = round(sd(duration_in_seconds/60), 2),
             age_mean = round(mean(age)),
             age_sd = round(sd(age)),
-            n_female = sum(gender == "Female"))
+            n_female = sum(gender == "Female"),
+            n_male = sum(gender == "Male"))
 
 df.exp1.demographics %>% 
   print_table()
@@ -1032,7 +1033,8 @@ df.exp2.demographics %>%
             age_sd = round(sd(age)),
             time_mean = round(mean(time)/60, 2),
             time_sd = round(sd(time)/60, 2),
-            n_female = sum(sex == "female")) %>% 
+            n_female = sum(sex == "female"),
+            n_male = sum(sex == "male")) %>% 
   print_table()
 ```
 
