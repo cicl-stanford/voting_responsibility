@@ -847,7 +847,7 @@ df.plot = fit_brm_exp1_surprise_bayesian %>%
 x = "estimate"
 y = "rating"
 
-ggplot(data = df.plot,
+p.exp1.surprise = ggplot(data = df.plot,
        mapping = aes(x = .data[[x]],
                      y = .data[[y]],
                      color = color,
@@ -892,6 +892,7 @@ ggplot(data = df.plot,
   theme(text = element_text(size = 24),
         axis.title.x = element_text(size = 22))
 
+p.exp1.surprise
 # ggsave(file = "../../figures/plots/experiment1_surprise_scatter.pdf",
 #        width = 5,
 #        height = 5)
@@ -918,7 +919,7 @@ df.plot = fit_brm_exp1_importance_bayesian %>%
 x = "estimate"
 y = "rating"
 
-ggplot(data = df.plot,
+p.exp1.importance = ggplot(data = df.plot,
        mapping = aes(x = .data[[x]],
                      y = .data[[y]],
                      color = color,
@@ -963,6 +964,7 @@ ggplot(data = df.plot,
   theme(text = element_text(size = 24),
         axis.title.x = element_text(size = 22))
 
+p.exp1.importance
 # ggsave(file = "../../figures/plots/experiment1_importance_scatter.pdf",
 #        width = 5,
 #        height = 5)
@@ -1613,62 +1615,6 @@ fit_brm_exp2_responsibility_bayesian %>%
 
 ### Scatterplot 
 
-#### Overall 
-
-```{r fig.height=5, fig.width=5}
-df.plot = fit_brm_exp2_responsibility_bayesian %>% 
-  fitted(newdata = df.exp2.regression.means,
-         re_formula = NA) %>% 
-  as_tibble() %>% 
-  clean_names() %>%
-  bind_cols(df.exp2.regression.means) %>%
-  arrange(desc(trial)) %>% 
-  rename(rating = rating_mean)
-
-x = "estimate"
-y = "rating"
-
-ggplot(data = df.plot,
-       mapping = aes(x = .data[[x]],
-                     y = .data[[y]])) +
-  geom_abline(intercept = 0,
-              slope = 1,
-              linetype = 2) +
-  geom_smooth(mapping = aes(y = .data[[x]],
-                            ymin = q2_5,
-                            ymax = q97_5),
-              stat = "identity",
-              color = "lightblue",
-              alpha = 0.4,
-              fill = "lightblue") +
-  geom_linerange(mapping = aes_string(ymin = str_c(y, "_low"),
-                               ymax = str_c(y, "_high")),
-                 alpha = 0.1) +
-  geom_point(size = 2,
-             alpha = 0.2) +
-  annotate(geom = "text",
-           label = df.plot %>% 
-             summarize(r = cor(.data[[x]], .data[[y]]),
-                       rmse = rmse(.data[[x]], .data[[y]])) %>% 
-             mutate(across(.fns = ~ round(., 2))) %>% 
-             unlist() %>% 
-             str_c(names(.), " = ", .),
-           x = c(0, 0), 
-           y = c(100, 90),
-           size = 7,
-           hjust = 0) + 
-  labs(x = "model prediction",
-       y = "mean responsibility rating") +
-  scale_x_continuous(breaks = seq(0, 100, 25)) +
-  scale_y_continuous(breaks = seq(0, 100, 25)) +
-  coord_cartesian(xlim = c(0, 100),
-                  ylim = c(0, 100)) +
-  theme(text = element_text(size = 24))
-
-# ggsave(file = "../../figures/plots/experiment2_overall_scatter.pdf",
-#        width = 5,
-#        height = 5)
-```
 #### Selection of cases 
 
 ```{r fig.height=5, fig.width=5}
@@ -1695,7 +1641,7 @@ df.plot = fit_brm_exp2_selection_empirical %>%
 x = "estimate"
 y = "rating"
 
-ggplot(data = df.plot,
+p.exp2.selection = ggplot(data = df.plot,
        mapping = aes(x = .data[[x]],
                      y = .data[[y]])) +
   geom_abline(intercept = 0,
@@ -1732,12 +1678,69 @@ ggplot(data = df.plot,
                   ylim = c(0, 100)) +
   theme(text = element_text(size = 24))
 
+p.exp2.selection
 # ggsave(file = "../../figures/plots/experiment2_selection_scatter.pdf",
 #        width = 5,
 #        height = 5)
 ```
 
+#### Overall 
 
+```{r fig.height=5, fig.width=5}
+df.plot = fit_brm_exp2_responsibility_bayesian %>% 
+  fitted(newdata = df.exp2.regression.means,
+         re_formula = NA) %>% 
+  as_tibble() %>% 
+  clean_names() %>%
+  bind_cols(df.exp2.regression.means) %>%
+  arrange(desc(trial)) %>% 
+  rename(rating = rating_mean)
+
+x = "estimate"
+y = "rating"
+
+p.exp2.full = ggplot(data = df.plot,
+       mapping = aes(x = .data[[x]],
+                     y = .data[[y]])) +
+  geom_abline(intercept = 0,
+              slope = 1,
+              linetype = 2) +
+  geom_smooth(mapping = aes(y = .data[[x]],
+                            ymin = q2_5,
+                            ymax = q97_5),
+              stat = "identity",
+              color = "lightblue",
+              alpha = 0.4,
+              fill = "lightblue") +
+  geom_linerange(mapping = aes_string(ymin = str_c(y, "_low"),
+                               ymax = str_c(y, "_high")),
+                 alpha = 0.1) +
+  geom_point(size = 2,
+             alpha = 0.2) +
+  annotate(geom = "text",
+           label = df.plot %>% 
+             summarize(r = cor(.data[[x]], .data[[y]]),
+                       rmse = rmse(.data[[x]], .data[[y]])) %>% 
+             mutate(across(.fns = ~ round(., 2))) %>% 
+             unlist() %>% 
+             str_c(names(.), " = ", .),
+           x = c(0, 0), 
+           y = c(100, 90),
+           size = 7,
+           hjust = 0) + 
+  labs(x = "model prediction",
+       y = "mean responsibility rating") +
+  scale_x_continuous(breaks = seq(0, 100, 25)) +
+  scale_y_continuous(breaks = seq(0, 100, 25)) +
+  coord_cartesian(xlim = c(0, 100),
+                  ylim = c(0, 100)) +
+  theme(text = element_text(size = 24))
+
+p.exp2.full
+# ggsave(file = "../../figures/plots/experiment2_overall_scatter.pdf",
+#        width = 5,
+#        height = 5)
+```
 
 ### Means for selection of cases 
 
@@ -3220,7 +3223,7 @@ ggplot(data = df.plot,
 ### 4. Moral badness interaction 
 
 ```{r, warning=FALSE, message=FALSE}
-ggpredict(fit.brm_exp4_responsibility_badness_dummy,
+p.exp4.importance = ggpredict(fit.brm_exp4_responsibility_badness_dummy,
           terms = c("importance", "badness_dummy")) %>% 
   plot() +
   theme_classic() +
@@ -3236,6 +3239,7 @@ ggpredict(fit.brm_exp4_responsibility_badness_dummy,
         legend.position = c(0, 1),
         legend.justification = c(-0.25, 1)) +
   guides(color = guide_legend(override.aes = list(fill = NA)))
+p.exp4.importance
 
 # ggsave("../../figures/plots/experiment4_responsibility_importance_dummy.pdf",
 #        width = 5,
@@ -3243,7 +3247,7 @@ ggpredict(fit.brm_exp4_responsibility_badness_dummy,
 ```
 
 ```{r, warning=FALSE}
-ggpredict(fit.brm_exp4_responsibility_badness_dummy,
+p.exp4.surprise = ggpredict(fit.brm_exp4_responsibility_badness_dummy,
           terms = c("surprise", "badness_dummy")) %>% 
   plot() +
   theme_classic() +
@@ -3260,6 +3264,7 @@ ggpredict(fit.brm_exp4_responsibility_badness_dummy,
         legend.justification = c(-0.25, 1)) +
   guides(color = guide_legend(override.aes = list(fill = NA)))
 
+p.exp4.surprise
 # ggsave("../../figures/plots/experiment4_responsibility_surprise_dummy.pdf",
 #        width = 5,
 #        height = 5)
@@ -3314,7 +3319,7 @@ df.plot = fit.brm_exp4_responsibility_importance_surprise_scaled %>%
 
 y = "responsibility"
 
-ggplot(data = df.plot,
+p.exp4.responsibility = ggplot(data = df.plot,
        mapping = aes(x = estimate,
                      y = .data[[y]])) +
   geom_abline(intercept = 0,
@@ -3350,6 +3355,7 @@ ggplot(data = df.plot,
                   ylim = c(-1.25, 1.25)) +
   theme(text = element_text(size = 24))
 
+p.exp4.responsibility
 # ggsave("../../figures/plots/experiment4_responsibility_surprise_importance_scaled.pdf",
 #        width = 5,
 #        height = 5)
@@ -3369,7 +3375,7 @@ df.plot = fit.brm_exp4_wrongfulness_importance_surprise_scaled %>%
 
 y = "wrongfulness"
 
-ggplot(data = df.plot,
+p.exp4.wrongfulness = ggplot(data = df.plot,
        mapping = aes(x = estimate,
                      y = .data[[y]])) +
   geom_abline(intercept = 0,
@@ -3405,6 +3411,7 @@ ggplot(data = df.plot,
                   ylim = c(-1.25, 1.25)) +
   theme(text = element_text(size = 24))
 
+p.exp4.wrongfulness
 # ggsave("../../figures/plots/experiment4_wrongfulness_surprise_importance_scaled.pdf",
 #        width = 5,
 #        height = 5)
@@ -3515,7 +3522,6 @@ df.exp4.regression.means %>%
             by = c("trial", "bad", "votes"))
 
 ```
-
 ### Per trial 
 
 ```{r fig.height=20, fig.width=8}
@@ -3534,6 +3540,62 @@ ggplot(data = df.plot,
   geom_point(alpha = 0.1,
              position = position_dodge(width = 1)) + 
   facet_wrap(~ question, ncol = 1)
+```
+
+# Combined figures for the paper 
+
+## Figure 4
+
+```{r fig.height=5, fig.width=10}
+p.exp1.surprise + p.exp1.importance + 
+  plot_layout(nrow = 1) + 
+  plot_annotation(tag_levels = "a",
+                  tag_suffix = ")") & 
+  theme(plot.tag = element_text(face = "bold", size = 20))
+
+# ggsave(file = "../../figures/plots/experiment1_combined_scatter.pdf",
+#        width = 10,
+#        height = 5)
+```
+## Figure 6 
+
+```{r fig.height=5, fig.width=10}
+p.exp2.selection + p.exp2.full + 
+  plot_layout(nrow = 1) + 
+  plot_annotation(tag_levels = "a",
+                  tag_suffix = ")") & 
+  theme(plot.tag = element_text(face = "bold", size = 20))
+
+# ggsave(file = "../../figures/plots/experiment2_combined_scatter.pdf",
+#        width = 10,
+#        height = 5)
+```
+
+## Figure 11 
+
+```{r fig.height=5, fig.width=10}
+p.exp4.importance + p.exp4.surprise + 
+  plot_layout(nrow = 1) + 
+  plot_annotation(tag_levels = "a",
+                  tag_suffix = ")") & 
+  theme(plot.tag = element_text(face = "bold", size = 20))
+
+# ggsave(file = "../../figures/plots/experiment4_combined_lines.pdf",
+#        width = 10,
+#        height = 5)
+```
+## Figure 12
+
+```{r fig.height=5, fig.width=10}
+p.exp4.responsibility + p.exp4.wrongfulness + 
+  plot_layout(nrow = 1) + 
+  plot_annotation(tag_levels = "a",
+                  tag_suffix = ")") & 
+  theme(plot.tag = element_text(face = "bold", size = 20))
+
+# ggsave(file = "../../figures/plots/experiment4_combined_scatter.pdf",
+#        width = 10,
+#        height = 5)
 ```
 
 ## Session info 
